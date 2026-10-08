@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Akıllı Deneme Sınavı Hazırlama</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Arial,sans-serif;background:#f1f5f9}
+.top{height:62px;background:#0f172a;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 18px}
+.main{height:calc(100vh - 62px);display:grid;grid-template-columns:minmax(500px,1fr) 440px;gap:14px;padding:14px}
+.panel{background:#fff;border:1px solid #dbe3ed;border-radius:12px;box-shadow:0 2px 8px #0f172a12}
+.left{display:flex;flex-direction:column;min-height:0}.bar{padding:9px;border-bottom:1px solid #e2e8f0;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.view{position:relative;flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#cbd5e1}
+.stage{position:relative;display:none;background:#fff;box-shadow:0 5px 25px #0004}.stage canvas{display:block}
+.cropLayer{position:absolute;inset:0;cursor:crosshair}.sel{position:absolute;border:2px solid #2563eb;background:#2563eb22;display:none;pointer-events:none}
+.holo{position:absolute;left:0;right:0;bottom:0;height:8%;border-top:2px dashed #dc2626aa;background:#dc262610;pointer-events:none}
+.holo span{position:absolute;right:4px;bottom:2px;font-size:9px;color:#b91c1c;background:#fff;padding:2px}
+.right{overflow:auto;display:flex;flex-direction:column;gap:10px}.box{padding:12px}
+.title{font-weight:700;font-size:14px;margin-bottom:9px}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+label{font-size:10px;font-weight:700;color:#475569}.input,.select{height:34px;width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:0 8px;font-size:12px}
+.btn{border:0;border-radius:7px;padding:8px 11px;font-size:11px;font-weight:700;cursor:pointer}.blue{background:#2563eb;color:#fff}.green{background:#16a34a;color:#fff}.gray{background:#e2e8f0;color:#334155}.red{background:#dc2626;color:#fff}.orange{background:#ea580c;color:#fff}
+.library{display:grid;grid-template-columns:1fr 1fr;gap:7px}.qcard{border:2px solid #e2e8f0;border-radius:8px;overflow:hidden;background:#fff}.qcard img{width:100%;height:120px;object-fit:contain;display:block;background:#fff}.qfoot{padding:6px;background:#f8fafc;border-top:1px solid #e2e8f0}.answer{display:flex;gap:4px;margin-top:5px}.ans{width:25px;height:25px;border-radius:50%;border:1px solid #94a3b8;background:#fff;font-size:10px;cursor:pointer}.ans.on{background:#2563eb;color:#fff;border-color:#2563eb}.qactions{display:flex;justify-content:space-between;align-items:center}.empty{text-align:center;color:#94a3b8;font-size:11px;padding:25px;grid-column:1/-1}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;z-index:50}.modal.on{display:flex}.modalbox{width:95vw;max-height:95vh;background:#fff;border-radius:12px;overflow:auto}.preview{background:#94a3b8;padding:20px}
+.a4{width:210mm;min-height:297mm;background:#fff;margin:0 auto 20px;padding:9mm;color:#111}
+.head{border:1px solid #111;padding:4mm;margin-bottom:3mm}.headrow{display:flex;gap:4mm;align-items:center}.head img{width:18mm;height:18mm;object-fit:contain}.headtext{text-align:center;flex:1}.school{font-weight:700;font-size:11pt}.exam{font-size:14pt;font-weight:800;margin-top:1mm}.sub{font-size:9pt}.student{display:grid;grid-template-columns:1fr 1fr;gap:4mm;margin-top:3mm;font-size:8.5pt}
+.qgrid{display:block}
+/* Satır: sütunlar arası ayırıcı çizgi hücrenin sol kenarında; align stretch ile çizgi satır boyunca kesintisiz */
+.smart-row{display:grid;align-items:stretch;break-inside:avoid;gap:0}
+.smart-cell{min-width:0;border-left:0.35mm solid #94a3b8}
+.smart-cell.first{border-left:0}
+.item{position:relative;break-inside:avoid;min-width:0;display:flex;align-items:flex-start}
+.item img{display:block;max-width:100%;height:auto;flex:none}
+.num{flex:none;width:6.5mm;height:6.5mm;margin-right:1.5mm;border-radius:50%;background:#0f172a;color:#fff;font-size:9.5pt;font-weight:800;line-height:6.5mm;text-align:center;font-family:Arial,sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.key{border-top:1px solid #111;margin-top:5mm;padding-top:3mm;font-size:9pt}.printOnly{display:none}
+@page{size:A4 portrait;margin:0}
+@media print{
+ *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ body *{visibility:hidden}.printOnly,.printOnly *{visibility:visible}
+ .smart-cell{border-left-color:#777}
+ .printOnly{display:block!important;position:absolute;left:0;top:0;width:210mm}
+ .a4{margin:0;width:210mm;height:297mm;min-height:297mm;overflow:hidden;page-break-after:always;box-shadow:none}
+ .a4:last-child{page-break-after:auto}
+}
+@media(max-width:1050px){.main{grid-template-columns:1fr;height:auto}.left{height:65vh}}
+</style>
+</head>
+<body>
+<header class="top">
+<div><b>📝 Akıllı Deneme Sınavı</b><div style="font-size:9px;color:#94a3b8">PDF → yüksek kaliteli soru kütüphanesi → otomatik A4</div></div>
+<div style="display:flex;gap:6px"><button class="btn gray" id="previewBtn">👁 Önizleme</button><button class="btn green" id="printBtn">🖨 Yazdır / PDF</button></div>
+</header>
+
+<main class="main">
+<section class="panel left">
+<div class="bar">
+<label class="btn blue" style="color:#fff;cursor:pointer">📄 PDF Yükle<input id="pdfFile" type="file" accept="application/pdf" hidden></label>
+<button class="btn gray" id="prev">◀</button><span id="pageInfo" style="font-size:11px;font-weight:bold">PDF yok</span><button class="btn gray" id="next">▶</button>
+<button class="btn orange" id="fit">⛶ Ekrana Sığdır</button>
+<button class="btn gray" id="modeManual">✂ Manuel Kırp</button>
+<button class="btn blue" id="modeAuto">🔢 Numara ile Otomatik</button>
+</div>
+<div class="view" id="view">
+<div id="empty" style="text-align:center;color:#64748b"><div style="font-size:48px">📄</div><b>PDF yükleyin</b><div style="font-size:11px;margin-top:5px">Manuel modda kutu çizin veya otomatik modda soru numarasına tıklayın.</div></div>
+<div class="stage" id="stage"><canvas id="canvas"></canvas><div class="cropLayer" id="cropLayer"><div class="sel" id="sel"></div><div class="holo"><span>ALT %8 HOLOGRAM ALANI</span></div></div></div>
+</div>
+</section>
+
+<aside class="right">
+<section class="panel box">
+<div class="title">🏫 Sınav Bilgileri</div>
+<div class="grid2">
+<div style="grid-column:1/-1"><label>Okul</label><input class="input" id="school" value="ŞEHİT BAŞKOMİSER MEHMET PARLAK ORTAOKULU"></div>
+<div><label>Sınav Adı</label><input class="input" id="exam" value="8. SINIF DENEME SINAVI"></div>
+<div><label>Ders</label><input class="input" id="subject" value="TÜRKÇE"></div>
+<div><label>Tarih</label><input class="input" id="date" type="date"></div>
+<div><label>Sınıf</label><input class="input" id="grade" value="8. Sınıf"></div>
+<div style="grid-column:1/-1"><label>Logo</label><input class="input" id="logo" type="file" accept="image/png,image/jpeg"></div>
+</div>
+</section>
+
+<section class="panel box">
+<div class="title">📐 Yerleşim</div>
+<div class="grid2">
+<div><label>Yerleşim</label><select class="select" id="layout"><option value="auto">🤖 Akıllı Otomatik</option><option value="fixed">Sabit Sütun (hepsi sütuna sığdırılır)</option></select></div>
+<div><label>Sütun</label><select class="select" id="cols"><option>1</option><option selected>2</option><option>3</option></select></div>
+<div><label>Sayfa başına en çok satır</label><select class="select" id="rows"><option value="auto">Otomatik</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+<div><label>Boşluk (mm)</label><input class="input" id="gap" type="number" value="2" min="0" max="10" step=".5"></div>
+<div style="grid-column:1/-1"><label>Ölçek % (boş = otomatik, tüm sorularda aynı)</label><input class="input" id="scale" type="number" min="40" max="200" step="1" placeholder="Otomatik"></div>
+<div style="grid-column:1/-1;display:flex;align-items:center;gap:6px"><input type="checkbox" id="optimize" checked><label for="optimize" style="font-size:11px">Sütuna girenleri bir araya topla, boşlukları azaltmak için sırayı karıştır (numaralar yerleşim sırasına göre verilir)</label></div>
+</div>
+<div style="margin-top:8px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:7px;font-size:10px;color:#1e40af">
+<b>Akıllı düzen:</b> her sorunun PDF'teki gerçek genişliği ölçülür. Tüm sorular <b>aynı ölçekle</b> basılır (yazı boyutu eşit kalır). Sütuna sığanlar ayırıcı çizgiyle yan yana, sütundan geniş olanlar tek satırın tamamına yerleşir.
+</div>
+</section>
+
+<section class="panel box">
+<div class="title" style="display:flex;justify-content:space-between">📚 Soru Kütüphanesi <span id="count" style="background:#dbeafe;color:#1d4ed8;padding:3px 7px;border-radius:10px">0</span></div>
+<div id="library" class="library"><div class="empty">Seçilen sorular burada görünecek.</div></div>
+</section>
+
+<section class="panel box">
+<div style="display:flex;gap:6px"><button class="btn blue" style="flex:1" id="build">📄 Sınavı Oluştur</button><button class="btn red" id="clear">🗑</button></div>
+<div id="status" style="font-size:10px;background:#f1f5f9;border-radius:6px;padding:7px;margin-top:7px">Hazır.</div>
+</section>
+</aside>
+</main>
+
+<div class="printOnly" id="printArea"></div>
+<div class="modal" id="modal"><div class="modalbox"><div style="padding:10px 14px;border-bottom:1px solid #ddd;display:flex;justify-content:space-between"><b>Önizleme</b><button class="btn gray" id="close">Kapat</button></div><div id="preview" class="preview"></div><div style="padding:10px;text-align:right;border-top:1px solid #ddd"><button class="btn green" id="print2">🖨 Yazdır / PDF</button></div></div></div>
+
+<script type="module">
+import {getDocument,GlobalWorkerOptions} from "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.min.mjs";
+GlobalWorkerOptions.workerSrc="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.2.67/build/pdf.worker.min.mjs";
+
+const $=id=>document.getElementById(id);
+const QUALITY=3;            // kırpma çözünürlüğü: 1 PDF noktası = 3 piksel
+const MM=25.4/72;           // 1 PDF noktası = 0.3528 mm
+let pdf=null,pageNo=1,screenScale=1,mode="manual",logo="",library=[],pdfBytes=null;
+let drawing=false,sx=0,sy=0;
+
+$("date").value=new Date().toISOString().slice(0,10);
+
+function status(t){$("status").textContent=t}
+function esc(s){return String(s||"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+
+$("pdfFile").onchange=async e=>{
+ const f=e.target.files[0]; if(!f)return;
+ try{
+  pdfBytes=await f.arrayBuffer();
+  pdf=await getDocument({data:pdfBytes}).promise; pageNo=1;
+  $("empty").style.display="none";$("stage").style.display="block";
+  await render();
+  status(`${pdf.numPages} sayfa hazır. ${mode==="manual"?"Kutuyla soru seçebilirsiniz.":"Soru numarasına tıklayın."}`);
+ }catch(err){alert("PDF açılamadı: "+err.message)}
+};
+
+async function render(){
+ if(!pdf)return;
+ const p=await pdf.getPage(pageNo),v=p.getViewport({scale:1}),box=$("view");
+ screenScale=Math.min((box.clientWidth-30)/v.width,(box.clientHeight-30)/v.height);
+ screenScale=Math.max(.1,screenScale);
+ const vp=p.getViewport({scale:screenScale}),dpr=Math.min(devicePixelRatio||1,2);
+ const c=$("canvas");c.width=Math.ceil(vp.width*dpr);c.height=Math.ceil(vp.height*dpr);c.style.width=vp.width+"px";c.style.height=vp.height+"px";
+ $("stage").style.width=vp.width+"px";$("stage").style.height=vp.height+"px";
+ const ctx=c.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+ await p.render({canvasContext:ctx,viewport:vp}).promise;
+ $("pageInfo").textContent=`Sayfa ${pageNo} / ${pdf.numPages}`;
+ $("sel").style.display="none";
+}
+$("prev").onclick=async()=>{if(pdf&&pageNo>1){pageNo--;await render()}}
+$("next").onclick=async()=>{if(pdf&&pageNo<pdf.numPages){pageNo++;await render()}}
+$("fit").onclick=render;
+$("modeManual").onclick=()=>{mode="manual";status("Manuel kırpma aktif. Soru çevresine kutu çizin.")}
+$("modeAuto").onclick=()=>{mode="auto";status("Otomatik mod aktif. PDF metin tabanlıysa soru numarasına tıklayın.")}
+
+$("cropLayer").addEventListener("mousedown",e=>{
+ if(!pdf||mode!=="manual")return;
+ const r=$("cropLayer").getBoundingClientRect();drawing=true;sx=e.clientX-r.left;sy=e.clientY-r.top;
+ $("sel").style.cssText=`display:block;left:${sx}px;top:${sy}px;width:0;height:0`;
+});
+$("cropLayer").addEventListener("mousemove",e=>{
+ if(!drawing)return;
+ const r=$("cropLayer").getBoundingClientRect(),x=Math.max(0,Math.min(r.width,e.clientX-r.left)),y=Math.max(0,Math.min(r.height,e.clientY-r.top));
+ const l=Math.min(sx,x),t=Math.min(sy,y),w=Math.abs(x-sx),h=Math.abs(y-sy);
+ $("sel").style.left=l+"px";$("sel").style.top=t+"px";$("sel").style.width=w+"px";$("sel").style.height=h+"px";
+});
+window.addEventListener("mouseup",async()=>{
+ if(!drawing)return;drawing=false;
+ const s=$("sel"),x=parseFloat(s.style.left),y=parseFloat(s.style.top),w=parseFloat(s.style.width),h=parseFloat(s.style.height);
+ if(w>15&&h>15)await highQualityCrop(x,y,w,h);
+ s.style.display="none";
+});
+
+$("cropLayer").addEventListener("click",async e=>{
+ if(mode!=="auto"||!pdf)return;
+ await autoQuestionFromClick(e);
+});
+
+/* Kırpılan görüntünün çevresindeki beyaz boşlukları kırpar.
+   Böylece soru genişliği gerçek içerik genişliğini yansıtır. */
+function trimCanvas(c,pad=6){
+ const W=c.width,H=c.height,ctx=c.getContext("2d");
+ const d=ctx.getImageData(0,0,W,H).data;
+ let t=H,b=-1,l=W,r=-1;
+ for(let y=0;y<H;y++){
+  const row=y*W*4;
+  for(let x=0;x<W;x++){
+   const i=row+x*4;
+   if(d[i]<235||d[i+1]<235||d[i+2]<235){
+    if(y<t)t=y;if(y>b)b=y;if(x<l)l=x;if(x>r)r=x;
+   }
+  }
+ }
+ if(b<0)return c;
+ l=Math.max(0,l-pad);t=Math.max(0,t-pad);r=Math.min(W-1,r+pad);b=Math.min(H-1,b+pad);
+ const o=document.createElement("canvas");o.width=r-l+1;o.height=b-t+1;
+ const octx=o.getContext("2d");octx.fillStyle="#fff";octx.fillRect(0,0,o.width,o.height);
+ octx.drawImage(c,l,t,o.width,o.height,0,0,o.width,o.height);
+ return o;
+}
+
+async function highQualityCrop(x,y,w,h){
+ const p=await pdf.getPage(pageNo);
+ const base=p.getViewport({scale:1});
+ const sx=x/screenScale,sy=y/screenScale,sw=w/screenScale,sh=h/screenScale;
+ const holo=base.height*.92;
+ let ch=Math.min(sh,holo-sy);
+ if(sy>=holo||ch<10){alert("Seçim hologram alanında.");return}
+ const full=p.getViewport({scale:QUALITY});
+ const temp=document.createElement("canvas");temp.width=Math.ceil(full.width);temp.height=Math.ceil(full.height);
+ const tctx=temp.getContext("2d");tctx.fillStyle="#fff";tctx.fillRect(0,0,temp.width,temp.height);
+ await p.render({canvasContext:tctx,viewport:full}).promise;
+ const out=document.createElement("canvas"),ox=Math.round(sx*QUALITY),oy=Math.round(sy*QUALITY),ow=Math.round(sw*QUALITY),oh=Math.round(ch*QUALITY);
+ out.width=ow;out.height=oh;
+ const ctx=out.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,ow,oh);
+ ctx.drawImage(temp,ox,oy,ow,oh,0,0,ow,oh);
+ const t=trimCanvas(out);
+ addQuestion(t.toDataURL("image/png"),t.width,t.height);
+}
+
+async function autoQuestionFromClick(e){
+ const r=$("cropLayer").getBoundingClientRect(),cx=e.clientX-r.left,cy=e.clientY-r.top;
+ const p=await pdf.getPage(pageNo),content=await p.getTextContent(),vp=p.getViewport({scale:1});
+ const items=content.items.map(it=>{
+  const tr=it.transform;return {text:(it.str||"").trim(),x:tr[4],y:tr[5],w:it.width||0,h:Math.abs(tr[3]||tr[0]||10)};
+ }).filter(a=>a.text);
+ const pdfX=cx/screenScale,pdfY=(r.height-cy)/screenScale;      // PDF koordinatı: alt-sol orijin
+ // Soru numarası: "13." / "13)" / "Soru 13" biçimi. Çıplak sayılar (grafik ekseni, madeni para değeri vb.) numara sayılmaz.
+ let nums=items.filter(a=>/^(?:soru\s*)?\d{1,3}\s*[.)]$/i.test(a.text));
+ if(!nums.length)nums=items.filter(a=>/^\d{1,3}$/.test(a.text)&&a.x<vp.width*0.12||/^\d{1,3}$/.test(a.text)&&Math.abs(a.x-pdfX)<25);
+ if(!nums.length){alert("Bu PDF'de metin katmanı bulunamadı. Manuel Kırp modunu kullanın.");return}
+ const clicked=nums.map(n=>({...n,dist:Math.abs(n.x-pdfX)+Math.abs(n.y-pdfY)})).sort((a,b)=>a.dist-b.dist)[0];
+ if(clicked.dist>80){alert("Yakında soru numarası bulunamadı.");return}
+
+ const holoY=vp.height*.08;                                      // alt %8 hologram
+ const yTop=Math.min(vp.height,clicked.y+clicked.h*1.4);
+ // aynı sütundaki bir sonraki soru numarası
+ const sameCol=nums.filter(n=>Math.abs(n.x-clicked.x)<60&&n.y<clicked.y-5).sort((a,b)=>b.y-a.y)[0];
+ // sağdaki komşu sütun varsa sağ kenarı orada bitir
+ const otherCol=nums.filter(n=>n.x>clicked.x+100).sort((a,b)=>a.x-b.x)[0];
+ const left=Math.max(0,clicked.x-8);
+ const right=Math.min(vp.width,otherCol?otherCol.x-6:vp.width-10);
+ let yBottom;
+ if(sameCol){
+  yBottom=sameCol.y+sameCol.h*1.4;
+ }else{
+  const colItems=items.filter(a=>a.x>=left-2&&a.x<right&&a.y<clicked.y-1&&a.y>holoY);
+  yBottom=colItems.length?Math.min(...colItems.map(a=>a.y))-clicked.h*0.4:holoY;
+ }
+ yBottom=Math.max(holoY,yBottom);
+ if(yTop-yBottom<15){alert("Soru alanı belirlenemedi. Manuel Kırp modunu kullanın.");return}
+ await highQualityCrop(left*screenScale,(vp.height-yTop)*screenScale,(right-left)*screenScale,(yTop-yBottom)*screenScale);
+}
+
+function addQuestion(image,w,h){
+ library.push({id:crypto.randomUUID(),image,w,h,ratio:w/h,answer:"",selected:true});
+ renderLibrary();
+ status(`Soru ${library.length} kütüphaneye eklendi (${(w/QUALITY*MM).toFixed(0)} × ${(h/QUALITY*MM).toFixed(0)} mm).`);
+}
+
+function renderLibrary(){
+ const el=$("library");el.innerHTML="";$("count").textContent=library.length;
+ if(!library.length){el.innerHTML='<div class="empty">Seçilen sorular burada görünecek.</div>';return}
+ library.forEach((q,i)=>{
+  const d=document.createElement("div");d.className="qcard";
+  d.innerHTML=`<img src="${q.image}"><div class="qfoot"><div class="qactions"><b style="font-size:10px">Soru ${i+1}</b><button class="btn red" style="padding:3px 6px" data-del="${q.id}">Sil</button></div><div class="answer">${["A","B","C","D","E"].map(a=>`<button class="ans ${q.answer===a?"on":""}" data-ans="${a}" data-id="${q.id}">${a}</button>`).join("")}</div></div>`;
+  d.onclick=e=>{
+   if(e.target.dataset.del){library=library.filter(x=>x.id!==q.id);renderLibrary();return}
+   if(e.target.dataset.ans){q.answer=e.target.dataset.ans;renderLibrary()}
+  };
+  el.appendChild(d);
+ });
+}
+$("clear").onclick=()=>{if(confirm("Tüm sorular silinsin mi?")){library=[];renderLibrary()}};
+
+$("logo").onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>logo=r.result;r.readAsDataURL(f)};
+
+function data(){
+ return {school:$("school").value,exam:$("exam").value,subject:$("subject").value,date:$("date").value,grade:$("grade").value,layout:$("layout").value,cols:+$("cols").value,rows:$("rows").value,gap:+$("gap").value||0,scale:parseFloat($("scale").value)||0,optimize:$("optimize").checked}
+}
+function dateTR(s){if(!s)return"";let p=s.split("-");return p.length===3?`${p[2]}.${p[1]}.${p[0]}`:s}
+
+/* ===================== AKILLI YERLEŞİM MOTORU ===================== */
+const PAGE_W=192;      // A4 genişlik 210 - 2×9 mm kenar
+const CELLPAD=2;       // hücre içi sol/sağ boşluk (mm)
+const LINE=0.4;        // ayırıcı çizgi payı (mm)
+const TOL=1.5;         // sütuna sığma toleransı (mm)
+const NUMW=8;          // soru numarası rozeti genişliği (mm)
+const GROUPGAP=4;      // sütun grubu ile tam satır grubu arasındaki ek boşluk (mm)
+
+function headHTML(d){
+ return `<div class="head"><div class="headrow">${logo?`<img src="${logo}">`:""}<div class="headtext"><div class="school">${esc(d.school)}</div><div class="exam">${esc(d.exam)}</div><div class="sub">${esc(d.subject)} | ${esc(d.grade)} | ${dateTR(d.date)}</div></div></div><div class="student"><div>Adı Soyadı: ______________________________</div><div>Sınıf / No: __________________________</div></div></div>`;
+}
+function headerHeightMm(d){
+ const tmp=document.createElement("div");tmp.className="a4";
+ tmp.style.cssText="position:absolute;left:-9999px;top:0;visibility:hidden";
+ tmp.innerHTML=headHTML(d);document.body.appendChild(tmp);
+ const h=tmp.querySelector(".head").offsetHeight*25.4/96+3; // +3mm alt boşluk
+ tmp.remove();return h;
+}
+
+function planLayout(qs,d){
+ const cols=d.cols,colW=PAGE_W/cols,content1=colW-2*CELLPAD-LINE-NUMW;
+ const nat=qs.map(q=>({q,w:q.w/QUALITY*MM,h:q.h/QUALITY*MM}));   // PDF'teki gerçek mm ölçüsü
+ const fixed=d.layout==="fixed";
+
+ // 1) TEK ORTAK ÖLÇEK → tüm sorularda punto eşit
+ let s;
+ if(d.scale>0) s=d.scale/100;
+ else{
+  const cand=nat.map(a=>a.w).filter(w=>w<=content1*1.08);       // sütuna ait sorular
+  s=cand.length?Math.min(1.1,content1/Math.max(...cand)):1;
+  s=Math.max(.8,s);
+ }
+ if(fixed){const mx=Math.max(...nat.map(a=>a.w));s=Math.min(s,content1/mx)}
+
+ const pageH=297-18-headerHeightMm(d)-2;
+
+ // 2) Her soru: kaç sütun kaplar? (sütuna sığıyorsa 1, geniş ise daha fazla / tam satır)
+ const items=nat.map(a=>{
+  let w=a.w*s,h=a.h*s,span=1;
+  // Sütundan en fazla %12 geniş olanlar sütuna sığacak kadar küçültülür; daha genişler tam satıra geçer
+  if(!fixed)while(span<cols&&w>(span*colW-2*CELLPAD-LINE-NUMW)*1.12)span++;
+  const maxW=span*colW-2*CELLPAD-LINE-NUMW,maxH=pageH-d.gap-2;
+  const f=Math.min(1,maxW/w,maxH/h);                              // yalnızca taşanı küçült
+  return {q:a.q,span,w:w*f,h:h*f,shrunk:f<.999};
+ });
+
+ // 3) Satırlara diz
+ const rows=[];
+ const kindOf=cells=>(cols>1&&cells.some(c=>c.span>1))?"wide":"col";
+ const packSeq=list=>{
+  let cur=null;
+  for(const it of list){
+   if(!cur||cur.used+it.span>cols){cur={cells:[],used:0};rows.push(cur)}
+   cur.cells.push(it);cur.used+=it.span;
+  }
+ };
+ if(d.optimize){
+  // Sütuna girenler: benzer yükseklikli sorular aynı satıra eşleştirilir → boşluk azalır, hepsi art arda gelir
+  const rem=items.filter(i=>i.span===1),wide=items.filter(i=>i.span>1);
+  while(rem.length){
+   const first=rem.shift(),cells=[first];
+   while(cells.length<cols&&rem.length){
+    let bi=0,bd=Infinity;
+    rem.forEach((c,i)=>{const dd=Math.abs(c.h-first.h);if(dd<bd){bd=dd;bi=i}});
+    cells.push(rem.splice(bi,1)[0]);
+   }
+   rows.push({cells,used:cells.length});
+  }
+  packSeq(wide);   // geniş sorular sütun grubundan sonra, tam satır olarak
+ }else{
+  packSeq(items);
+ }
+ rows.forEach((r,i)=>{
+  r.kind=kindOf(r.cells);
+  r.mt=(i>0&&rows[i-1].kind!==r.kind)?GROUPGAP:0;   // grup değişiminde az mesafe
+  r.h=Math.max(...r.cells.map(c=>c.h))+d.gap+r.mt;
+ });
+
+ // 4) Gerçek yüksekliğe göre sayfalara böl
+ const maxRows=d.rows==="auto"?Infinity:+d.rows;
+ const pages=[];let pg=[],used=0;
+ for(const r of rows){
+  if(pg.length&&(used+r.h>pageH||pg.length>=maxRows)){pages.push(pg);pg=[];used=0}
+  if(!pg.length&&r.mt){r.h-=r.mt;r.mt=0}   // sayfa başında ek boşluk gerekmez
+  pg.push(r);used+=r.h;
+ }
+ if(pg.length)pages.push(pg);
+ return {pages,scale:s,shrunk:items.filter(i=>i.shrunk).length};
+}
+
+function makePage(rows,start,d){
+ const page=document.createElement("div");page.className="a4";
+ page.innerHTML=headHTML(d);
+ const grid=document.createElement("div");grid.className="qgrid";
+ let n=start;
+ rows.forEach(row=>{
+  const r=document.createElement("div");r.className="smart-row";
+  r.style.gridTemplateColumns=`repeat(${d.cols},minmax(0,1fr))`;
+  if(row.mt)r.style.marginTop=row.mt+"mm";
+  let col=0;
+  row.cells.forEach(c=>{
+   const cell=document.createElement("div");
+   cell.className="smart-cell"+(col===0?" first":"");
+   cell.style.gridColumn=`span ${c.span}`;
+   cell.style.padding=`${d.gap/2}mm ${CELLPAD}mm`;
+   cell.innerHTML=`<div class="item" style="width:${(c.w+NUMW).toFixed(2)}mm"><div class="num">${n}</div><img src="${c.q.image}" style="width:${c.w.toFixed(2)}mm"></div>`;
+   r.appendChild(cell);n++;col+=c.span;
+  });
+  // Eksik hücreleri boş doldur ki sütun çizgileri satır boyunca devam etsin
+  for(;col<d.cols;col++){
+   const e=document.createElement("div");e.className="smart-cell";
+   e.style.padding=`${d.gap/2}mm ${CELLPAD}mm`;r.appendChild(e);
+  }
+  grid.appendChild(r);
+ });
+ page.appendChild(grid);
+ return page;
+}
+
+function build(){
+ const qs=library.filter(q=>q.selected);
+ if(!qs.length){alert("En az bir soru ekleyin.");return}
+ const d=data();
+ const plan=planLayout(qs,d);
+ $("printArea").innerHTML="";
+ let n=1;
+ plan.pages.forEach(rows=>{
+  $("printArea").appendChild(makePage(rows,n,d));
+  rows.forEach(r=>n+=r.cells.length);
+ });
+ renderPreview();
+ status(`${qs.length} soru ${plan.pages.length} A4 sayfaya yerleştirildi. Ortak ölçek: %${Math.round(plan.scale*100)} (tüm sorularda aynı → punto eşit).${plan.shrunk?` ${plan.shrunk} soru sayfaya sığmadığı için küçültüldü.`:""}`);
+}
+
+function renderPreview(){
+ const p=$("preview");p.innerHTML="";
+ Array.from($("printArea").children).forEach(x=>p.appendChild(x.cloneNode(true)));
+ $("modal").classList.add("on");
+}
+$("build").onclick=build;
+$("previewBtn").onclick=()=>{$("printArea").children.length?renderPreview():build()};
+$("close").onclick=()=>$("modal").classList.remove("on");
+$("printBtn").onclick=()=>{if(!$("printArea").children.length)build();setTimeout(()=>window.print(),200)};
+$("print2").onclick=()=>{ $("modal").classList.remove("on");setTimeout(()=>window.print(),200)};
+window.addEventListener("resize",()=>{if(pdf){clearTimeout(window.__r);window.__r=setTimeout(render,150)}});
+renderLibrary();
+</script>
+</body>
+</html>
