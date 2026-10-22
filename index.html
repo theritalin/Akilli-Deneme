@@ -460,7 +460,7 @@
 
 <body>
    <header class="top">
-      <div><b>📝 Akıllı Deneme Sınavı</b>
+      <div><b>📝 Akıllı Deneme Sınavı</b> <span style="font-size:9px;color:#94a3b8">v0.1.2</span>
          <div style="font-size:9px;color:#94a3b8">PDF → yüksek kaliteli soru kütüphanesi → otomatik A4</div>
       </div>
       <div style="display:flex;gap:6px"><button class="btn gray" id="previewBtn">👁 Önizleme</button><button
@@ -535,7 +535,7 @@
                      class="input" id="scale" type="number" min="40" max="200" step="1" placeholder="Otomatik"></div>
                <div style="grid-column:1/-1;display:flex;align-items:center;gap:6px"><input type="checkbox"
                      id="optimize" checked><label for="optimize" style="font-size:11px">Sütuna girenleri bir araya
-                     topla, boşlukları azaltmak için sırayı karıştır (numaralar yerleşim sırasına göre verilir)</label>
+                     topla, geniş soruları sona al (numaralar sütunlarda yukarıdan aşağı verilir)</label>
                </div>
             </div>
             <div
@@ -792,47 +792,92 @@
             return { q: a.q, span, w: w * f, h: h * f, shrunk: f < .999 };
          });
 
-         // 3) Satırlara diz
-         const rows = [];
-         const kindOf = cells => (cols > 1 && cells.some(c => c.span > 1)) ? "wide" : "col";
-         const packSeq = list => {
+         // 3) Bloklara ayır: art arda gelen sütunluk sorular tek "sütun bloğu", geniş sorular tam satır
+         const blocks = [];
+         const pushCol = it => {
+            const last = blocks[blocks.length - 1];
+            if (last && last.kind === "col") last.items.push(it); else blocks.push({ kind: "col", items: [it] });
+         };
+         const packWide = list => {
             let cur = null;
             for (const it of list) {
-               if (!cur || cur.used + it.span > cols) { cur = { cells: [], used: 0 }; rows.push(cur) }
+               if (it.span === 1 && !(cur && cur.used + 1 <= cols)) { cur = null; pushCol(it); continue }
+               if (!cur || cur.used + it.span > cols) { cur = { kind: "wide", cells: [], used: 0 }; blocks.push(cur) }
                cur.cells.push(it); cur.used += it.span;
             }
          };
          if (d.optimize) {
-            // Sütuna girenler: benzer yükseklikli sorular aynı satıra eşleştirilir → boşluk azalır, hepsi art arda gelir
-            const rem = items.filter(i => i.span === 1), wide = items.filter(i => i.span > 1);
-            while (rem.length) {
-               const first = rem.shift(), cells = [first];
-               while (cells.length < cols && rem.length) {
-                  let bi = 0, bd = Infinity;
-                  rem.forEach((c, i) => { const dd = Math.abs(c.h - first.h); if (dd < bd) { bd = dd; bi = i } });
-                  cells.push(rem.splice(bi, 1)[0]);
-               }
-               rows.push({ cells, used: cells.length });
-            }
-            packSeq(wide);   // geniş sorular sütun grubundan sonra, tam satır olarak
+            // Sütuna girenler önce (sıra korunur), geniş sorular ardından tam satır olarak
+            items.filter(i => i.span === 1).forEach(pushCol);
+            packWide(items.filter(i => i.span > 1));
          } else {
-            packSeq(items);
+            packWide(items);
          }
-         rows.forEach((r, i) => {
-            r.kind = kindOf(r.cells);
-            r.mt = (i > 0 && rows[i - 1].kind !== r.kind) ? GROUPGAP : 0;   // grup değişiminde az mesafe
-            r.h = Math.max(...r.cells.map(c => c.h)) + d.gap + r.mt;
-         });
+
+         // Sütun bloğu: sorular alt alta dizilir (1-2-3 ilk sütunda, sonra diğer sütuna geçilir)
+         const ih = it => it.h + d.gap;
+         // Sırayı bozmadan en çok H yükseklikte ve en çok cap soruluk sütunlara böl
+         const splitCols = (list, H, cap) => {
+            const out = [[]]; let sum = 0;
+            for (const it of list) {
+               const col = out[out.length - 1];
+               if (col.length && (sum + ih(it) > H + 1e-6 || col.length >= cap)) { out.push([it]); sum = ih(it) }
+               else { col.push(it); sum += ih(it) }
+            }
+            return out;
+         };
+         const colHeight = c => c.reduce((a, it) => a + ih(it), 0);
+         // Tüm listeyi sütunlara dengeli dağıtan en küçük yükseklik
+         const balanced = (list, cap) => {
+            if (list.length > cols * cap) return null;
+            let lo = Math.max(...list.map(ih)), hi = colHeight(list);
+            if (splitCols(list, lo, cap).length <= cols) hi = lo;
+            for (let k = 0; k < 40 && hi - lo > .05; k++) {
+               const m = (lo + hi) / 2;
+               if (splitCols(list, m, cap).length <= cols) hi = m; else lo = m;
+            }
+            const c = splitCols(list, hi, cap);
+            return c.length <= cols ? c : null;
+         };
 
          // 4) Gerçek yüksekliğe göre sayfalara böl
          const maxRows = d.rows === "auto" ? Infinity : +d.rows;
-         const pages = []; let pg = [], used = 0;
-         for (const r of rows) {
-            if (pg.length && (used + r.h > pageH || pg.length >= maxRows)) { pages.push(pg); pg = []; used = 0 }
-            if (!pg.length && r.mt) { r.h -= r.mt; r.mt = 0 }   // sayfa başında ek boşluk gerekmez
-            pg.push(r); used += r.h;
+         const pages = []; let pg = [], used = 0, nrows = 0;
+         const newPage = () => { if (pg.length) pages.push(pg); pg = []; used = 0; nrows = 0 };
+         const gapBefore = kind => (pg.length && pg[pg.length - 1].kind !== kind) ? GROUPGAP : 0;
+         for (const b of blocks) {
+            if (b.kind === "wide") {
+               let mt = gapBefore("wide"), h = Math.max(...b.cells.map(c => c.h)) + d.gap;
+               if (pg.length && (used + mt + h > pageH || nrows >= maxRows)) { newPage(); mt = 0 }
+               pg.push({ kind: "wide", cells: b.cells, mt, h: h + mt, count: b.cells.length });
+               used += h + mt; nrows++;
+               continue;
+            }
+            let queue = b.items.slice();
+            while (queue.length) {
+               const mt = gapBefore("col"), avail = pageH - used - mt, cap = maxRows - nrows;
+               if (pg.length && (cap <= 0 || avail < ih(queue[0]))) { newPage(); continue }
+               let columns = balanced(queue, cap);
+               if (columns && Math.max(...columns.map(colHeight)) <= avail) queue = [];
+               else {
+                  // Sayfaya sığdığı kadarını sütun sütun doldur, kalanı sonraki sayfaya
+                  columns = [];
+                  for (let c = 0; c < cols && queue.length; c++) {
+                     const col = []; let sum = 0;
+                     while (queue.length && col.length < cap && (sum + ih(queue[0]) <= avail || (!col.length && !pg.length && !columns.length))) {
+                        sum += ih(queue[0]); col.push(queue.shift());
+                     }
+                     if (!col.length) break;
+                     columns.push(col);
+                  }
+               }
+               const h = Math.max(...columns.map(colHeight)) + mt;
+               pg.push({ kind: "col", columns, mt, h, count: columns.reduce((a, c) => a + c.length, 0) });
+               used += h; nrows += Math.max(...columns.map(c => c.length));
+               if (queue.length) newPage();
+            }
          }
-         if (pg.length) pages.push(pg);
+         newPage();
          return { pages, scale: s, shrunk: items.filter(i => i.shrunk).length };
       }
 
@@ -841,24 +886,28 @@
          page.innerHTML = headHTML(d);
          const grid = document.createElement("div"); grid.className = "qgrid";
          let n = start;
+         const itemHTML = c => `<div class="item" style="width:${(c.w + NUMW).toFixed(2)}mm"><div class="num">${n++}</div><img src="${c.q.image}" style="width:${c.w.toFixed(2)}mm"></div>`;
          rows.forEach(row => {
             const r = document.createElement("div"); r.className = "smart-row";
             r.style.gridTemplateColumns = `repeat(${d.cols},minmax(0,1fr))`;
             if (row.mt) r.style.marginTop = row.mt + "mm";
             let col = 0;
-            row.cells.forEach(c => {
+            const addCell = (span, html, pad) => {
                const cell = document.createElement("div");
                cell.className = "smart-cell" + (col === 0 ? " first" : "");
-               cell.style.gridColumn = `span ${c.span}`;
-               cell.style.padding = `${d.gap / 2}mm ${CELLPAD}mm`;
-               cell.innerHTML = `<div class="item" style="width:${(c.w + NUMW).toFixed(2)}mm"><div class="num">${n}</div><img src="${c.q.image}" style="width:${c.w.toFixed(2)}mm"></div>`;
-               r.appendChild(cell); n++; col += c.span;
-            });
-            // Eksik hücreleri boş doldur ki sütun çizgileri satır boyunca devam etsin
-            for (; col < d.cols; col++) {
-               const e = document.createElement("div"); e.className = "smart-cell";
-               e.style.padding = `${d.gap / 2}mm ${CELLPAD}mm`; r.appendChild(e);
+               cell.style.gridColumn = `span ${span}`;
+               cell.style.padding = pad;
+               cell.innerHTML = html;
+               r.appendChild(cell); col += span;
+            };
+            if (row.kind === "col") {
+               // Sütun bloğu: her hücre bir sütun, sorular alt alta
+               row.columns.forEach(c => addCell(1, c.map(it => `<div style="padding:${d.gap / 2}mm 0">${itemHTML(it)}</div>`).join(""), `0 ${CELLPAD}mm`));
+            } else {
+               row.cells.forEach(c => addCell(c.span, itemHTML(c), `${d.gap / 2}mm ${CELLPAD}mm`));
             }
+            // Eksik hücreleri boş doldur ki sütun çizgileri satır boyunca devam etsin
+            while (col < d.cols) addCell(1, "", `${d.gap / 2}mm ${CELLPAD}mm`);
             grid.appendChild(r);
          });
          page.appendChild(grid);
@@ -874,7 +923,7 @@
          let n = 1;
          plan.pages.forEach(rows => {
             $("printArea").appendChild(makePage(rows, n, d));
-            rows.forEach(r => n += r.cells.length);
+            rows.forEach(r => n += r.count);
          });
          renderPreview();
          status(`${qs.length} soru ${plan.pages.length} A4 sayfaya yerleştirildi. Ortak ölçek: %${Math.round(plan.scale * 100)} (tüm sorularda aynı → punto eşit).${plan.shrunk ? ` ${plan.shrunk} soru sayfaya sığmadığı için küçültüldü.` : ""}`);
